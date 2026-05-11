@@ -54,7 +54,7 @@ extract_data(
 ### Task 0.1
 Use the Explorer (left panel) and manually check the directory structure of the downloaded data. Where are the images and masks stored?  Can you programmatically count the number of images and masks?
 
-*Hint*: you can run any bash command in a jupyter notebook by prefixing it with `!`. You might find the command `wc` and the pipe operator `|` useful here.
+*Hint*: you can run any bash command in a jupyter notebook by prefixing it with `!`. You might find the command `wc` (which stands for "word count") and the pipe operator `|` useful here.
 """
 
 
@@ -489,13 +489,12 @@ visualize(img, top_left_rescaled)
 
 ### Task 2.5
 Let's compose a series of transformations using `transforms.Compose()` that includes:
-- Randomly flip the image horizontally with a probability of 0.5
-- Randomly flip the image vertically with a probability of 0.5
+- Converting the numpy array to a PIL image using `transforms.ToPILImage()` (required for many torchvision transforms)
+- Randomly flip the image horizontally and vertically with a probability of 0.5
 - Randomly rotate the image by 90 degrees
 - Randomly crop the image to a size of 500x500
 - Resize the image to a size of 1000x1000
 
-Hint: first, convert the numpy array to a PIL image using `transforms.ToPILImage()`.
 """
 
 
@@ -506,7 +505,9 @@ Hint: first, convert the numpy array to a PIL image using `transforms.ToPILImage
 import torchvision.transforms as transforms
 
 # Define a series of transformations
-transform = ...  # TODO
+transform = transforms.Compose(
+    ...  # TODO
+)
 
 transformed_img = transform(img)
 visualize(img, transformed_img)
@@ -545,7 +546,7 @@ visualize(img, transformed_img)
 # %% [markdown]
 """<div class="alert alert-info">
 
-### Task 2.5
+### Task 2.6
 Normalize the image by dividing each pixel value by the maximum allowed intensity for the data type. Does the data type of the image change? What are the minimum and maximum values of the normalized image?
 """
 # %% tags=["task"]
@@ -609,6 +610,7 @@ Implement a function that performs a convolution of an image with a filter.
 
 
 def conv2d(img, kernel):
+    # Ensure the kernel is square and has an odd size
     assert kernel.shape[0] == kernel.shape[1]
     assert kernel.shape[0] % 2 != 0
 
@@ -621,8 +623,11 @@ def conv2d(img, kernel):
 
     for i in range(output.shape[0]):
         for j in range(output.shape[1]):
-            output[i, j] = ...  # TODO
+            # Extract the curent patch or window from the image
+            patch = ... # TODO
 
+            # Element-wise multiplication between the patch and the kernel, then sum the result to get the convolved value at (i, j)
+            output[i, j] = ...  # TODO
     return output
 
 
@@ -633,6 +638,7 @@ def conv2d(img, kernel):
 
 
 def conv2d(img, kernel):
+    # Ensure the kernel is square and has an odd size
     assert kernel.shape[0] == kernel.shape[1]
     assert kernel.shape[0] % 2 != 0
 
@@ -645,24 +651,33 @@ def conv2d(img, kernel):
 
     for i in range(output.shape[0]):
         for j in range(output.shape[1]):
-            output[i, j] = np.sum(img[i : i + d_k, j : j + d_k] * kernel)
+            # Extract the curent patch or window from the image
+            patch = img[i : i + d_k, j : j + d_k]
+
+            # Element-wise multiplication between the patch and the kernel, then sum the result to get the convolved value at (i, j)
+            output[i, j] = np.sum(patch * kernel)
     return output
 
 
 # %%
 # Run this cell to check your function
 
-identity = np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+# Identity Kernel
+identity = np.array([[0, 0, 0], 
+                     [0, 1, 0], 
+                     [0, 0, 0]])
 # Let's take a 256x256 center crop of the image for better visualization of the effect of the convolution
-new_im = conv2d(img[128:384, 128:384, 0], identity)
-# Lets print the original image and the convolved image
-print(img[128:384, 128:384, 0].shape)
-print(new_im.shape)
+test_crop = img[128:384, 128:384, 0]  # Take the first channel for simplicity
+new_im = conv2d(test_crop, identity)
+
+# An identity kernel should produce an output that is a copy of the intput image (minus the edges during convolution)
+print(f"Input shape: {test_crop.shape} -> Output shape: {new_im.shape}")
+
 
 # Lets visualize the original image and the convolved image and the filter
 plt.figure(figsize=(10, 10))
 plt.subplot(131)
-plt.imshow(img[128:384, 128:384, 0])
+plt.imshow(test_crop)
 plt.title("Original Image")
 plt.subplot(132)
 plt.imshow(identity)
@@ -685,6 +700,8 @@ Given an input image of size $H \times W$, a filter of size $K_h \times K_w$ , a
 can you come up with an analytical relationship regarding how much smaller the output image is compared to the input image?
 
 Feel free to play with this [visualizer](https://ezyang.github.io/convolution-visualizer/index.html) to get an intuition (ignore "Padding" and "Dilation" for now)!
+
+**Hint**: Look at your output from Task 3.1. Your image transformed from a shape of 256 to 254. Using teh Kernel Size ($K$) and Stride ($S$), can you figure out the mathematical relationship that produced this specific change?
 """
 # %% tags=["task"]
 ##########################
@@ -860,7 +877,8 @@ print(f"Loaded {len(images)} images and {len(masks)} masks.")
 """<div class="alert alert-info">
 
 ### Task 4.2
-Sample 5 images and masks from the loaded data and create a mini-batch of images and masks.
+We want to create a batch, a small group of images randomly chosen from the whole dataset. We need to pick the same images and masks to create the batch.
+You have to choose a set of random numbers that represent the position of the images in our list and then use those numbers to reach the images/masks and create the batch.
 """
 # %% tags=["task"]
 ##########################
@@ -909,7 +927,6 @@ Create a custom dataset using PyTorch's `Dataset` class that loads the images an
 ##########################
 from torch.utils.data import Dataset
 
-
 class MyDataset(Dataset):
     def __init__(self, images, masks):
         self.images = images
@@ -929,7 +946,6 @@ print(my_dataset[0])
 ####### Solution #########
 ##########################
 from torch.utils.data import Dataset
-
 
 class MyDataset(Dataset):
     def __init__(self, images, masks):
@@ -1022,8 +1038,8 @@ Hint: `skimage.measure.regionprops` can be useful here.
 ##########################
 from skimage import measure
 
-
 def analyze_area(mask):
+    regions = ... # TODO
     areas = ...  # TODO
     plt.hist(areas, bins=50)
     plt.xlabel("Size")
@@ -1039,7 +1055,6 @@ analyze_area(mask)
 ####### Solution #########
 ##########################
 from skimage import measure
-
 
 def analyze_area(mask):
     regions = measure.regionprops(mask)
