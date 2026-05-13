@@ -256,16 +256,25 @@ plt.tight_layout()
 # But the image which we are working with has the `channel` as the last axis.
 # Therefore, we need to reshape (by swapping) the image to the correct shape.
 
+# To make it more clear and don't swipe height and width by mistake, we will first 
+# crop a rectangular patch so we have different height and width and then we will 
+# swap the axes to have the channel as the first axis.
+
 # %% [markdown]
 """<div class="alert alert-info">
 
 ### Task 1.5
-Transpose the image to have the channel as the first axis. Use `np.transpose` to achieve this.
+Crop a rectangle (e.g., 500x800) from the image and then transpose the image to have the channel as the first axis. Use `np.transpose` to achieve this.
 """
 # %% tags=["task"]
 ##########################
 ######## To Do ###########
 ##########################
+# Create a rectangular crop of the image of size 500x800
+cropped_img = # TODO
+print("Original image shape: ", cropped_img.shape)
+
+# Transpose the image to have the channel as the first axis
 reshaped_img = ...  # TODO
 print("Reshaped image shape: ", reshaped_img.shape)
 
@@ -273,7 +282,12 @@ print("Reshaped image shape: ", reshaped_img.shape)
 ##########################
 ####### Solution #########
 ##########################
-reshaped_img = np.transpose(img, (2, 0, 1))
+# Create a rectangular crop of the image of size 500x800
+cropped_img = img[:500, :800, :]
+print("Original image shape: ", cropped_img.shape)
+
+# Transpose the image to have the channel as the first axis
+reshaped_img = np.transpose(cropped_img, (2, 0, 1))
 print("Reshaped image shape: ", reshaped_img.shape)
 
 # %% [markdown]
@@ -588,7 +602,7 @@ In the second chapter, we learnt about:
 # %% [markdown]
 # Convolutions are the elementary operations used in Convolutional Neural Networks (CNNs). <br> The images are convolved with filters as below: <br>
 #
-# ![](https://upload.wikimedia.org/wikipedia/commons/1/19/2D_Convolution_Animation.gif)
+# ![](https://raw.githubusercontent.com/vdumoulin/conv_arithmetic/master/gif/no_padding_no_strides.gif)
 #
 #
 # Please read this section https://en.wikipedia.org/wiki/Kernel_(image_processing)#Convolution on convolutions to learn how to implement a your own convolution function!
